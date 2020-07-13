@@ -1,0 +1,111 @@
+//感悟：纸上画了两个多小时，模拟题一发AC，泪流满面555
+/*题意：银行有n个窗口，每个窗口有一个独立的等候区，容量为m，一共有k个顾客来银行，每个顾客有各自的服务时长ti。当每个窗口的独立等候区都满员的时候，顾客在总等候区排队等候，哪个窗口的独立等候区先有空位，排在队首的顾客就去哪个独立等候区。顾客在程序一开始就尽可能站满独立等候区。最后询问Q位顾客是否能得到服务并且计算服务完成时间。*/
+/*解题思路：
+一开始打算使用时钟滴答算法，因为一共就540秒，循环540次然后每次判断顾客与等候区状态，但过程比较复杂。
+AC代码思路是将每个窗口视为独立的个体，有自己的时间表time1，每次服务完一个顾客，就增加顾客的服务时间到对应的窗口时间表上，排在独立等候区的顾客选择time1最小的窗口加入。
+所以，最关键一步还是要想到将公共时间转换成每个窗口的独立时间！
+*/
+
+AC代码：
+#include<iostream>
+#include<algorithm>
+#include<math.h>
+#include<iomanip>
+#include<stdio.h>
+#include<vector>
+#include<string>
+#include<map>
+#include<queue>
+#include<string.h>
+#define ll long long 
+#define INF 0x3f3f3f3f
+using namespace std;
+struct customer {
+	int num;
+	int t;
+	int finish;
+	bool is_sorry = false;
+};
+struct customer cus[1010];
+queue<struct customer>q[30];
+queue<struct customer>q_wait;
+int time1[30],flag[30];
+int main()
+{
+	int n, m, k, Q;
+	cin >> n >> m >> k >> Q;//n个窗口,黄线容纳m人，k个顾客,Q个查询
+	for (int i = 1;i <= k;i++) {
+		cus[i].num = i;
+		cin >> cus[i].t;
+	}
+	int i;
+	for (i = 1;i <= k;i++) {
+		int temp = i % n;
+		if (temp == 0)
+			temp = n;
+		if (q[temp].size() < m) {
+			q[temp].push(cus[i]);
+		}
+		else {
+			break;
+		}
+	}
+	for (int j = 1;j <= n;j++) {
+		if (q[j].empty() == 0) {
+			time1[j] = q[j].front().t;
+			cus[q[j].front().num].finish = time1[j];
+			q[j].pop();
+		}
+	}
+	for (int j = i;j <= k;j++) {
+		q_wait.push(cus[j]);
+	}
+	/**初始队列填充完毕**/
+	int flag_1;
+	while (q_wait.empty() == 0) {
+		struct customer cus_temp = q_wait.front();
+		q_wait.pop();
+		int min_time = INF,u;
+		for (int j = 1;j <= n;j++) {
+			if (time1[j] < min_time) {
+				u = j;
+				min_time = time1[j];
+			}
+		}
+		q[u].push(cus_temp);
+		if (time1[u] >= 540) {
+			break;
+		}
+		time1[u] += q[u].front().t;
+		cus[q[u].front().num].finish = time1[u];
+		q[u].pop();
+	}
+	while (q_wait.empty() == 0) {
+		struct customer temp = q_wait.front();
+		cus[temp.num].is_sorry = true;
+		q_wait.pop();
+	}
+	for (int i = 1;i <= n;i++) {
+		while (q[i].empty() == 0) {
+			struct customer temp = q[i].front();
+			q[i].pop();
+			if (time1[i] < 540) {
+				time1[i] += temp.t;
+				cus[temp.num].finish = time1[i];
+			}
+			else {
+				cus[temp.num].is_sorry = true;
+			}
+		}
+	}
+	int person;
+	for (int i = 0;i < Q;i++) {
+		cin >> person;
+		if (cus[person].is_sorry == false) {
+			printf("%02d:%02d\n", cus[person].finish / 60 + 8, cus[person].finish % 60);
+		}
+		else {
+			printf("Sorry\n");
+		}
+	}
+}

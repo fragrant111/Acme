@@ -1,0 +1,55 @@
+//感悟：
+一开始掉入的坑，连通图n=m-1。但这是最优情况下的，题目已经给出的道路不一定是最优的，可能存在环路，存在环路的话就不能套用最优情况。
+//思路就是用DFS对图进行上色，计算连通分量数，答案为连通分量数-1
+
+//AC代码：
+#include<iostream>
+#include<algorithm>
+#include<math.h>
+#include<iomanip>
+#include<stdio.h>
+#include<vector>
+#include<string>
+#include<map>
+#include<string.h>
+#define ll long long 
+#define INF 0x3f3f3f3f
+using namespace std;
+struct edge {
+	int s, d;
+};
+int n, m, k;
+int e[1010][1010], book[1010],color[1010],lost;
+struct edge e1[10000];
+vector<int>vec[1010];
+void dfs(int city, int c) {
+	if (color[city] != 0)
+		return;
+	color[city] = c;
+	for (const auto & nbr : vec[city]) {
+		if (color[nbr] == 0&&nbr!=lost) {
+			dfs(nbr, c);
+		}
+	}
+}
+int main()
+{
+	cin >> n >> m >> k;
+	for (int i = 0;i < m;i++) {
+		scanf("%d%d", &e1[i].s, &e1[i].d);
+		vec[e1[i].s].push_back(e1[i].d);
+		vec[e1[i].d].push_back(e1[i].s);
+	}
+	for (int i = 0;i < k;i++) {
+		int c = 1;
+		memset(color, 0, sizeof(color));
+		scanf("%d" ,&lost);
+		for (int j = 1;j <=n;j++) {
+			if (color[j] == 0&&j!=lost) {
+				dfs(j,c);
+				c++;
+			}
+		}
+		cout << c - 2 << endl;
+	}
+}
