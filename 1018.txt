@@ -1,0 +1,133 @@
+//题意：每个站点有共享单车now[i]辆，从0点出发以最短路径到达目标站点S，使得沿途站点以及S站点的共享单车数量调整到最大容量的一半，若有多条最短路径，选择需要送出车辆最少的；若仍存在多条路径，则选择收回路径最多的。
+//思路：解题关键在于管理员是从0点一次性到达S点的，所以若沿途中的站点的共享单车数量大于c/2，就能将多出的部分用于接下来的站点的共享单车数量的补充，而不用马上送回0点。
+送出量send=每个站点缺少的数量-之前站点多余的数量
+//解题技巧：使用dijkstra计算最短路径，用DFS进行路径搜索，并使用结构体保存所有最短路径以及对应的送出量和收回量
+
+//AC代码：
+#include<iostream>
+#include<algorithm>
+#include<math.h>
+#include<iomanip>
+#include<stdio.h>
+#include<vector>
+#include<string>
+#include<map>
+#include<queue>
+#include<string.h>
+#include<stack>
+#define ll long long 
+#define INF 0x3f3f3f3f
+using namespace std;
+int dis[510], e[510][510];
+vector<int>vec[510];
+int c, n, index1, m;
+int now[510], book[510],minpath=0;
+struct paths {
+	vector<int>path;
+	int send, back;
+};
+struct paths p[510];
+int stack1[510], top = -1, count1 = 0;
+bool cmp(struct paths a, struct paths b) {
+	if (a.send != b.send)
+		return a.send < b.send;
+	return a.back < b.back;
+}
+void dfs(int node,int length,int send,int current) {
+	if (length == minpath&&node==index1) {
+		for (int i = 0;i <= top;i++) {
+			p[count1].path.push_back(stack1[i]);
+		}
+		p[count1].back = current;
+		p[count1].send = send;
+		count1++;
+		return;
+	}
+	for (const auto&nbr : vec[node]) {
+		if (book[nbr] == 1||length+e[node][nbr]>minpath)continue;
+		book[nbr] = 1;
+		stack1[++top] = nbr;
+		int send1 = send, current1 = current;
+		if (now[nbr] > c / 2) {
+			current1 += now[nbr] - c / 2;
+		}
+		else {
+			int temp = c / 2 - now[nbr];
+			while (temp) {
+				if (current1 <= 0)
+					break;
+				current1--;
+				temp--;
+			}
+			while (temp) {
+				temp--;
+				send1++;
+			}
+		}
+		dfs(nbr, length + e[node][nbr],send1,current1);
+		book[nbr] = 0;
+		top--;
+	}
+}
+
+void Dijkstra() {
+	for (int i = 1;i <= n;i++) {
+		dis[i] = e[0][i];
+	}
+	book[0] = 1;
+	int u;
+	for (int i = 1;i <= n;i++) {
+		int min = INF;
+		for (int j = 1;j <= n;j++) {
+			if (book[j]==0&&dis[j] < min) {
+				min = dis[j];
+				u = j;
+			}
+		}
+		book[u] = 1;
+		for (int k = 1;k <= n;k++) {
+			if (book[k] == 0 && dis[k] > dis[u] + e[u][k]) {
+				dis[k] = dis[u] + e[u][k];
+			}
+		}
+	}
+	minpath = dis[index1];
+}
+int main()
+{
+	cin >> c >> n >> index1 >> m;
+	for (int i = 0;i <= n;i++) {
+		for (int j = 0;j <= n;j++) {
+			if (i == j)e[i][j] = 0;
+			else e[i][j] = INF;
+		}
+	}
+	for (int i = 1;i <= n;i++) {
+		scanf("%d", &now[i]);
+	}
+	int u, v, w;
+	for (int i = 1;i <= m;i++) {
+		scanf("%d%d%d", &u, &v, &w);
+		e[u][v] = e[v][u] = w;
+		vec[u].push_back(v);
+		vec[v].push_back(u);
+	}
+
+	Dijkstra();
+	memset(book, 0, sizeof(book));
+	book[0] = 1;
+	stack1[++top] = 0;
+	dfs(0,0,0,0);
+	sort(p, p + count1, cmp);
+	cout << p[0].send<<' ';
+	for (int i = 0;i < p[0].path.size();i++) {
+		if (i != p[0].path.size()-1) {
+			printf("%d->", p[0].path[i]);
+		}
+		else {
+			printf("%d ", p[0].path[i]);
+		}
+	}
+	printf("%d\n", p[0].back);
+	return 0;
+}
